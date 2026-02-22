@@ -24,6 +24,7 @@ const forgotPasswordRoutes = require('./forgot-password');
 const resetPasswordRoutes = require('./reset-password');
 const prepareEscrowContractRoutes = require('./prepare-escrow-contract');
 const fundEscrowHandler = require('./handlers/fund-escrow');
+const escrowStatusRoutes = require('./routes/escrow-status');
 const propertiesRoutes = require('./routes/properties');
 
 // Event trigger handlers
@@ -44,6 +45,7 @@ const processRefund = require('./actions/process-refund');
 
 // --- Middleware Imports ---
 const { authMiddleware } = require('./middleware/auth');
+const { verifyFirebaseToken } = require('./middleware/firebase-auth');
 
 const app = express();
 
@@ -138,6 +140,13 @@ app.use('/',
   prepareEscrowContractRoutes
 );
 
+// Escrow Status API - Protected with Firebase JWT authentication
+app.use('/api/escrow',
+  verifyFirebaseToken,
+  createTenantLimiter(100),
+  escrowStatusRoutes
+);
+
 // Error handler
 app.use((err, req, res, next) => {
   if (err) {
@@ -167,6 +176,7 @@ if (require.main === module) {
     logger.info('Available routes:');
     logger.info('- GET  /health');
     logger.info('- GET  /api/properties/:id (Public)');
+    logger.info('- GET  /api/escrow/status/:contractId (Protected - Firebase JWT)');
     logger.info('- GET  /api/auth/validate-reset-token (Public)');
     logger.info('- POST /api/auth/reset-password (Public)');
     logger.info('- POST /api/auth/forgot-password (Public)');
